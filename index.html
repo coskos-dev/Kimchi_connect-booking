@@ -273,6 +273,21 @@
     color:var(--indigo);
     font-weight:600;
   }
+  .resubmit-notice{
+    background:#FBF3D9;
+    border:1px solid #E4CE8A;
+    padding:16px 18px;
+    border-radius:2px;
+    margin-bottom:20px;
+    text-align:center;
+  }
+  .resubmit-notice p{
+    font-family:'Helvetica Neue',Arial,sans-serif;
+    font-size:13px;
+    color:#5c4a1a;
+    margin:0 0 12px;
+    line-height:1.5;
+  }
   .config-warning{
     background:#FBE9E7;
     border:1px solid #E8B4AC;
@@ -317,7 +332,7 @@
     <div class="row2">
       <div class="field">
         <label>Preferred Date / 희망 날짜</label>
-        <input type="date" id="f_date">
+        <input type="date" id="f_date" onchange="refreshIfAlreadySubmitted()">
       </div>
       <div class="field">
         <label>Guests / 인원</label>
@@ -337,7 +352,7 @@
 
     <div class="field">
       <label>How did you hear about us? / 어디서 알게 되셨나요?</label>
-      <select id="f_source">
+      <select id="f_source" onchange="refreshIfAlreadySubmitted()">
         <option value="Direct / Online search">Direct / Online search (직접 방문·검색)</option>
         <option value="__divider" disabled>── Guesthouse partners ──</option>
       </select>
@@ -362,8 +377,16 @@
     </div>
     <div class="note">
       결제 시 PayPal 메모(note)란에 반드시 <strong id="noteRef">-</strong> 를 남겨주세요. 예약 확인 및 매칭에 사용됩니다.<br>
-      Please write <strong id="noteRefEn">-</strong> in the PayPal payment note so we can match your booking.
+      Please write <strong id="noteRefEn">-</strong> in the PayPal payment note so we can match your booking.<br><br>
+      ⚠ PayPal 결제 페이지에서 <strong>수량(Quantity)을 인원수(<span id="qtyReminder">2</span>명)와 동일하게</strong> 입력해주세요.<br>
+      Please set <strong>Quantity to <span id="qtyReminderEn">2</span></strong> (matching your guest count) on the PayPal page.
     </div>
+  </div>
+
+  <div class="resubmit-notice hidden" id="resubmitNotice">
+    <p>정보가 변경되었어요. 구글폼에 반영하려면 다시 제출해주세요.<br>
+    <span style="opacity:0.7;font-size:12px;">Details changed — resubmit to update your booking record.</span></p>
+    <button class="btn btn-primary" onclick="resubmitBooking()">Resubmit Updated Info</button>
   </div>
 
   <a class="btn btn-paypal hidden" id="paypalBtn" target="_blank" rel="noopener">Pay with PayPal</a>
@@ -392,8 +415,9 @@ const CONFIG = {
   // 2) 운영 중인 클래스 시간대. 여기에 추가/삭제하면 버튼에 자동 반영됩니다.
   timeSlots: ["10:30 AM", "3:00 PM"],
 
-  // 2) 페이팔 아이디 (paypal.me/이 부분). 실제 계정명으로 교체하세요.
-  paypalUsername: "kimchiconnect",
+  // 2) 결제 링크. paypal.me는 계정 제한으로 해외 결제가 막혀서, 정상 작동하는 PayPal 결제 링크(Payment Link)로 대체.
+  //    이 링크는 손님이 직접 페이지에서 수량(인원수)을 입력하는 방식입니다.
+  paypalPaymentLinkUrl: "https://www.paypal.com/ncp/payment/PXMQWKMWT3G86",
 
   // 3) 구글폼 응답 제출 URL. 구글폼 편집 화면 > 우측 상단 점 3개 > "미리 채워진 링크 받기"로
   //    각 항목의 entry.XXXXXXXX 값을 확인한 뒤, 아래 formAction과 entry ID들을 교체하세요.
@@ -427,8 +451,77 @@ const CONFIG = {
 
 let guests = 2;
 let selectedTime = null;
+let summarySubmitted = false;
 const fmtKRW = n => n.toLocaleString('ko-KR') + '원';
 const fmtUSD = n => '$' + n.toLocaleString('en-US');
+
+function submitToGoogleForm(name, email, date, time, guestCount, source, notes){
+  const isDemo = CONFIG.googleForm.formAction.includes('REPLACE_WITH_YOUR_FORM_ID');
+  if (isDemo) return;
+  const form = document.createElement('form');
+  form.action = CONFIG.googleForm.formAction;
+  form.method = 'POST';
+  form.target = 'hidden_iframe';
+  const fields = {
+    [CONFIG.googleForm.entries.name]: name,
+    [CONFIG.googleForm.entries.email]: email,
+    [CONFIG.googleForm.entries.date]: date,
+    [CONFIG.googleForm.entries.time]: time,
+    [CONFIG.googleForm.entries.guests]: guestCount,
+    [CONFIG.googleForm.entries.source]: source,
+    [CONFIG.googleForm.entries.notes]: notes
+  };
+  Object.entries(fields).forEach(([k,v]) => {
+    const input = document.createElement('input');
+    input.type = 'hidden';
+    input.name = k;
+    input.value = v;
+    form.appendChild(input);
+  });
+  document.body.appendChild(form);
+  form.submit();
+  form.remove();
+}
+
+function renderSummary(name, date, time, guestCount, source){
+  const totalKRW = CONFIG.pricePerPersonKRW * guestCount;
+  const totalUSD = CONFIG.pricePerPersonUSD * guestCount;
+  const ref = (name || 'guest').replace(/\s+/g,'') + '-' + (date || '');
+
+  document.getElementById('sumUnitPrice').textContent = fmtUSD(CONFIG.pricePerPersonUSD) + ' / ' + fmtKRW(CONFIG.pricePerPersonKRW) + ' × ' + guestCount;
+  document.getElementById('sumGuests').textContent = guestCount + ' guest(s), ' + (time || '-') + ' — via ' + source;
+  document.getElementById('sumTotal').textContent = fmtUSD(totalUSD);
+  document.getElementById('noteRef').textContent = ref;
+  document.getElementById('noteRefEn').textContent = ref;
+  document.getElementById('qtyReminder').textContent = guestCount;
+  document.getElementById('qtyReminderEn').textContent = guestCount;
+
+  const payBtn = document.getElementById('paypalBtn');
+  payBtn.href = CONFIG.paypalPaymentLinkUrl;
+  payBtn.textContent = 'Continue to PayPal (총 ' + fmtUSD(totalUSD) + ')';
+}
+
+function refreshIfAlreadySubmitted(){
+  if (!summarySubmitted) return;
+  const name = document.getElementById('f_name').value.trim();
+  const date = document.getElementById('f_date').value;
+  const source = document.getElementById('f_source').value;
+
+  renderSummary(name, date, selectedTime, guests, source);
+  // 값이 바뀌었으니 화면 요약(가격 등)은 바로 갱신하되, 구글폼 재전송은 재제출 버튼을 눌러야만 실행됨
+  document.getElementById('resubmitNotice').classList.remove('hidden');
+}
+
+function resubmitBooking(){
+  const name = document.getElementById('f_name').value.trim();
+  const email = document.getElementById('f_email').value.trim();
+  const date = document.getElementById('f_date').value;
+  const source = document.getElementById('f_source').value;
+  const notes = document.getElementById('f_notes').value.trim();
+
+  submitToGoogleForm(name, email, date, selectedTime, guests, source, notes);
+  document.getElementById('resubmitNotice').classList.add('hidden');
+}
 
 function renderTimeOptions(){
   const wrap = document.getElementById('timeOptions');
@@ -447,6 +540,7 @@ function selectTime(slot){
   document.querySelectorAll('.time-btn').forEach(b => {
     b.classList.toggle('selected', b.textContent === slot);
   });
+  refreshIfAlreadySubmitted();
 }
 
 function renderSourceOptions(){
@@ -462,7 +556,7 @@ function renderSourceOptions(){
 function checkConfig(){
   const warnBox = document.getElementById('configWarning');
   const issues = [];
-  if (CONFIG.paypalUsername.includes('YOUR_PAYPAL_ME_ID')) issues.push('PayPal ID가 예시값입니다 (CONFIG.paypalUsername)');
+  if (CONFIG.paypalPaymentLinkUrl.includes('YOUR_')) issues.push('PayPal 결제 링크가 예시값입니다 (CONFIG.paypalPaymentLinkUrl)');
   if (CONFIG.googleForm.formAction.includes('REPLACE_WITH_YOUR_FORM_ID')) issues.push('구글폼 연동이 예시값입니다 (CONFIG.googleForm)');
   if (issues.length){
     warnBox.innerHTML = '⚠ 아직 실제 값으로 교체되지 않았습니다: <br>' + issues.map(i => '· ' + i).join('<br>') +
@@ -481,6 +575,7 @@ function changeGuests(delta){
   guests = Math.max(1, Math.min(8, guests + delta));
   document.getElementById('guestCount').textContent = guests;
   updateLivePrice();
+  refreshIfAlreadySubmitted();
 }
 
 function submitBooking(){
@@ -499,52 +594,12 @@ function submitBooking(){
     return;
   }
 
-  // 구글폼으로 전송 (숨겨진 iframe target이라 페이지 이동 없이 백그라운드로 제출됨)
-  const isDemo = CONFIG.googleForm.formAction.includes('REPLACE_WITH_YOUR_FORM_ID');
-  if (!isDemo){
-    const form = document.createElement('form');
-    form.action = CONFIG.googleForm.formAction;
-    form.method = 'POST';
-    form.target = 'hidden_iframe';
-
-    const fields = {
-      [CONFIG.googleForm.entries.name]: name,
-      [CONFIG.googleForm.entries.email]: email,
-      [CONFIG.googleForm.entries.date]: date,
-      [CONFIG.googleForm.entries.time]: selectedTime,
-      [CONFIG.googleForm.entries.guests]: guests,
-      [CONFIG.googleForm.entries.source]: source,
-      [CONFIG.googleForm.entries.notes]: notes
-    };
-    Object.entries(fields).forEach(([k,v]) => {
-      const input = document.createElement('input');
-      input.type = 'hidden';
-      input.name = k;
-      input.value = v;
-      form.appendChild(input);
-    });
-    document.body.appendChild(form);
-    form.submit();
-    form.remove();
-  }
-
-  // 결제 요약 계산
-  const totalKRW = CONFIG.pricePerPersonKRW * guests;
-  const totalUSD = CONFIG.pricePerPersonUSD * guests;
-  const ref = name.replace(/\s+/g,'') + '-' + date;
-
-  document.getElementById('sumUnitPrice').textContent = fmtUSD(CONFIG.pricePerPersonUSD) + ' / ' + fmtKRW(CONFIG.pricePerPersonKRW) + ' × ' + guests;
-  document.getElementById('sumGuests').textContent = guests + ' guest(s), ' + selectedTime + ' — via ' + source;
-  document.getElementById('sumTotal').textContent = fmtUSD(totalUSD);
-  document.getElementById('noteRef').textContent = ref;
-  document.getElementById('noteRefEn').textContent = ref;
+  submitToGoogleForm(name, email, date, selectedTime, guests, source, notes);
+  renderSummary(name, date, selectedTime, guests, source);
+  summarySubmitted = true;
 
   document.getElementById('summaryCard').classList.remove('hidden');
-
-  const payBtn = document.getElementById('paypalBtn');
-  payBtn.href = 'https://paypal.me/' + CONFIG.paypalUsername + '/' + totalUSD + 'USD';
-  payBtn.textContent = 'Pay ' + fmtUSD(totalUSD) + ' with PayPal';
-  payBtn.classList.remove('hidden');
+  document.getElementById('paypalBtn').classList.remove('hidden');
 
   document.getElementById('submitBtn').disabled = true;
   document.getElementById('submitBtn').textContent = 'Submitted ✓';

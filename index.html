@@ -1,0 +1,588 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mangwon Cooking Class — Booking</title>
+<style>
+  :root{
+    --paper:#F3EEE1;
+    --ink:#2A241C;
+    --indigo:#26415C;
+    --indigo-deep:#152A3D;
+    --clay:#8C5A3B;
+    --line:#D8CFB8;
+    --white:#FFFDF8;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background:var(--paper);
+    color:var(--ink);
+    font-family:'Georgia','Noto Serif KR',serif;
+    -webkit-font-smoothing:antialiased;
+  }
+  .wrap{
+    max-width:640px;
+    margin:0 auto;
+    padding:48px 24px 80px;
+  }
+  header{
+    text-align:center;
+    margin-bottom:40px;
+  }
+  .eyebrow{
+    font-family:'Helvetica Neue',Arial,sans-serif;
+    font-size:11px;
+    letter-spacing:0.22em;
+    text-transform:uppercase;
+    color:var(--indigo);
+    margin-bottom:10px;
+  }
+  h1{
+    font-size:32px;
+    font-weight:600;
+    margin:0 0 8px;
+    line-height:1.3;
+  }
+  .sub{
+    font-family:'Helvetica Neue',Arial,sans-serif;
+    font-size:14px;
+    color:#6b6252;
+    margin:0;
+  }
+  .divider{
+    width:36px;
+    height:2px;
+    background:var(--clay);
+    margin:20px auto 0;
+  }
+  .card{
+    background:var(--white);
+    border:1px solid var(--line);
+    border-radius:2px;
+    padding:32px;
+    margin-bottom:20px;
+  }
+  .field{
+    margin-bottom:20px;
+  }
+  label{
+    display:block;
+    font-family:'Helvetica Neue',Arial,sans-serif;
+    font-size:12px;
+    letter-spacing:0.04em;
+    text-transform:uppercase;
+    color:#6b6252;
+    margin-bottom:8px;
+  }
+  input, select, textarea{
+    width:100%;
+    font-family:'Helvetica Neue',Arial,sans-serif;
+    font-size:15px;
+    padding:11px 12px;
+    border:1px solid var(--line);
+    border-radius:2px;
+    background:var(--white);
+    color:var(--ink);
+  }
+  input:focus, select:focus, textarea:focus{
+    outline:none;
+    border-color:var(--indigo);
+  }
+  .row2{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:16px;
+  }
+  .stepper{
+    display:flex;
+    align-items:center;
+    gap:12px;
+  }
+  .stepper button{
+    width:36px;height:36px;
+    border:1px solid var(--line);
+    background:var(--white);
+    font-size:16px;
+    cursor:pointer;
+    border-radius:2px;
+  }
+  .stepper span{
+    font-size:18px;
+    min-width:24px;
+    text-align:center;
+  }
+  .summary{
+    background:var(--indigo-deep);
+    color:var(--white);
+    padding:28px 32px;
+    border-radius:2px;
+    margin-bottom:20px;
+  }
+  .summary-row{
+    display:flex;
+    justify-content:space-between;
+    align-items:baseline;
+    font-family:'Helvetica Neue',Arial,sans-serif;
+    font-size:13px;
+    margin-bottom:10px;
+    opacity:0.8;
+  }
+  .summary-total{
+    display:flex;
+    justify-content:space-between;
+    align-items:baseline;
+    border-top:1px solid rgba(255,255,255,0.2);
+    padding-top:14px;
+    margin-top:14px;
+  }
+  .summary-total .amt{
+    font-size:26px;
+    font-family:Georgia,serif;
+  }
+  .note{
+    font-family:'Helvetica Neue',Arial,sans-serif;
+    font-size:12px;
+    line-height:1.6;
+    opacity:0.75;
+    margin-top:14px;
+  }
+  .btn{
+    display:block;
+    width:100%;
+    text-align:center;
+    padding:16px;
+    font-family:'Helvetica Neue',Arial,sans-serif;
+    font-size:14px;
+    letter-spacing:0.03em;
+    text-transform:uppercase;
+    border:none;
+    border-radius:2px;
+    cursor:pointer;
+    text-decoration:none;
+  }
+  .btn-primary{
+    background:var(--indigo);
+    color:var(--white);
+    margin-bottom:12px;
+  }
+  .btn-primary:hover{ background:var(--indigo-deep); }
+  .btn-primary:disabled{
+    background:#b8b2a2;
+    cursor:not-allowed;
+  }
+  .btn-paypal{
+    background:#FFC439;
+    color:#111;
+    font-weight:700;
+  }
+  .btn-paypal:hover{ background:#f0b52d; }
+  .hidden{ display:none; }
+  .step-label{
+    font-family:'Helvetica Neue',Arial,sans-serif;
+    font-size:11px;
+    letter-spacing:0.15em;
+    text-transform:uppercase;
+    color:var(--clay);
+    margin-bottom:12px;
+  }
+  .success-box{
+    text-align:center;
+    padding:8px 0 4px;
+  }
+  .success-box .mark{
+    font-size:28px;
+    color:var(--indigo);
+    margin-bottom:6px;
+  }
+  .time-options{
+    display:flex;
+    gap:10px;
+  }
+  .time-btn{
+    flex:1;
+    padding:12px;
+    font-family:'Helvetica Neue',Arial,sans-serif;
+    font-size:14px;
+    text-align:center;
+    border:1px solid var(--line);
+    background:var(--white);
+    color:var(--ink);
+    border-radius:2px;
+    cursor:pointer;
+  }
+  .time-btn.selected{
+    background:var(--indigo);
+    border-color:var(--indigo);
+    color:var(--white);
+  }
+  .contact-bar{
+    display:flex;
+    justify-content:center;
+    gap:24px;
+    margin-top:22px;
+  }
+  .contact-item{
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    gap:7px;
+    text-decoration:none;
+  }
+  .contact-icon{
+    width:46px;
+    height:46px;
+    border-radius:50%;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    box-shadow:0 4px 12px rgba(21,42,61,0.18);
+    transition:transform .15s ease, box-shadow .15s ease;
+  }
+  .contact-item:hover .contact-icon{
+    transform:translateY(-3px);
+    box-shadow:0 8px 18px rgba(21,42,61,0.24);
+  }
+  .contact-icon svg{
+    width:21px;
+    height:21px;
+  }
+  .contact-icon.insta{
+    background:linear-gradient(135deg, #F58529 0%, #DD2A7B 40%, #8134AF 70%, #515BD4 100%);
+  }
+  .contact-icon.wa{
+    background:#25D366;
+  }
+  .contact-label{
+    font-family:'Helvetica Neue',Arial,sans-serif;
+    font-size:11.5px;
+    color:#6b6252;
+  }
+  .brand-sub{
+    font-family:'Helvetica Neue',Arial,sans-serif;
+    font-size:11px;
+    color:#9a9280;
+    letter-spacing:0.03em;
+    margin-top:2px;
+  }
+  .live-price{
+    margin-top:8px;
+    font-family:'Helvetica Neue',Arial,sans-serif;
+    font-size:13px;
+    color:var(--indigo);
+    font-weight:600;
+  }
+  .config-warning{
+    background:#FBE9E7;
+    border:1px solid #E8B4AC;
+    color:#7A2E1F;
+    font-family:'Helvetica Neue',Arial,sans-serif;
+    font-size:12.5px;
+    line-height:1.6;
+    padding:14px 16px;
+    border-radius:2px;
+    margin-bottom:24px;
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <div class="eyebrow">Mangwon-dong, Seoul</div>
+    <h1>Kimchi Connect</h1>
+    <div class="brand-sub">by Connecting Mangwon</div>
+    <p class="sub" style="margin-top:14px;">Korean Home Cooking Class — Booking</p>
+    <div class="divider"></div>
+    <div class="contact-bar" id="contactBar"></div>
+  </header>
+
+  <div id="configWarning" class="config-warning"></div>
+
+  <!-- STEP 1: Booking details -->
+  <div class="card" id="formCard">
+    <div class="step-label">Step 1 — Booking Details</div>
+
+    <div class="field">
+      <label>Full Name / 이름</label>
+      <input type="text" id="f_name" placeholder="Jane Doe">
+    </div>
+
+    <div class="field">
+      <label>Email</label>
+      <input type="email" id="f_email" placeholder="jane@email.com">
+    </div>
+
+    <div class="row2">
+      <div class="field">
+        <label>Preferred Date / 희망 날짜</label>
+        <input type="date" id="f_date">
+      </div>
+      <div class="field">
+        <label>Guests / 인원</label>
+        <div class="stepper">
+          <button type="button" onclick="changeGuests(-1)">−</button>
+          <span id="guestCount">2</span>
+          <button type="button" onclick="changeGuests(1)">+</button>
+        </div>
+        <div class="live-price" id="livePrice">$130</div>
+      </div>
+    </div>
+
+    <div class="field">
+      <label>Time / 시간 선택</label>
+      <div class="time-options" id="timeOptions"></div>
+    </div>
+
+    <div class="field">
+      <label>How did you hear about us? / 어디서 알게 되셨나요?</label>
+      <select id="f_source">
+        <option value="Direct / Online search">Direct / Online search (직접 방문·검색)</option>
+        <option value="__divider" disabled>── Guesthouse partners ──</option>
+      </select>
+    </div>
+
+    <div class="field">
+      <label>Notes (allergies, dietary needs) / 요청사항</label>
+      <textarea id="f_notes" rows="3" placeholder="e.g. vegetarian, no shellfish"></textarea>
+    </div>
+
+    <button class="btn btn-primary" id="submitBtn" onclick="submitBooking()">Submit Booking Info</button>
+  </div>
+
+  <!-- STEP 2: Summary + Payment -->
+  <div class="summary hidden" id="summaryCard">
+    <div class="step-label" style="color:#fff;opacity:0.7;">Step 2 — Payment</div>
+    <div class="summary-row"><span>Class fee</span><span id="sumUnitPrice">-</span></div>
+    <div class="summary-row"><span>Guests</span><span id="sumGuests">-</span></div>
+    <div class="summary-total">
+      <span>Total due</span>
+      <span class="amt" id="sumTotal">-</span>
+    </div>
+    <div class="note">
+      결제 시 PayPal 메모(note)란에 반드시 <strong id="noteRef">-</strong> 를 남겨주세요. 예약 확인 및 매칭에 사용됩니다.<br>
+      Please write <strong id="noteRefEn">-</strong> in the PayPal payment note so we can match your booking.
+    </div>
+  </div>
+
+  <a class="btn btn-paypal hidden" id="paypalBtn" target="_blank" rel="noopener">Pay with PayPal</a>
+
+  <div class="success-box hidden" id="doneMsg">
+    <div class="mark">✓</div>
+    <div style="font-family:'Helvetica Neue',Arial,sans-serif;font-size:13px;color:#6b6252;">
+      예약 정보가 접수되었습니다. PayPal 결제까지 완료해주시면 예약이 확정됩니다.
+    </div>
+  </div>
+
+  <iframe name="hidden_iframe" id="hidden_iframe" style="display:none;"></iframe>
+
+</div>
+
+<script>
+/* ============================================================
+   CONFIG — 사장님이 실제 값으로 바꿔주셔야 하는 부분입니다.
+   ============================================================ */
+const CONFIG = {
+  // 1) 인원 1명당 가격 (원화 / 달러). OTA가 71.99 USD면 참고용으로 원화도 대략 환산해뒀어요.
+  //    ※ OTA 플랫폼과 레이트 패리티(가격 동일 유지) 조항이 있는지 꼭 확인하세요.
+  pricePerPersonKRW: 90000,
+  pricePerPersonUSD: 65,
+
+  // 2) 운영 중인 클래스 시간대. 여기에 추가/삭제하면 버튼에 자동 반영됩니다.
+  timeSlots: ["10:30 AM", "3:00 PM"],
+
+  // 2) 페이팔 아이디 (paypal.me/이 부분). 실제 계정명으로 교체하세요.
+  paypalUsername: "kimchiconnect",
+
+  // 3) 구글폼 응답 제출 URL. 구글폼 편집 화면 > 우측 상단 점 3개 > "미리 채워진 링크 받기"로
+  //    각 항목의 entry.XXXXXXXX 값을 확인한 뒤, 아래 formAction과 entry ID들을 교체하세요.
+  //    formAction은 실제 보기(viewform) URL에서 /viewform을 /formResponse로 바꾼 값입니다.
+  googleForm: {
+    formAction: "https://docs.google.com/forms/d/e/1FAIpQLSen16DdRtSQggzeYiLcuFwqgVvVlaXQ_el_EkBPu6cOWxjajQ/formResponse",
+    entries: {
+      name: "entry.1212048947",
+      email: "entry.2069122207",
+      date: "entry.412010725",
+      time: "entry.1773685133",
+      guests: "entry.489339247",
+      source: "entry.248593202",
+      notes: "entry.75499399"
+    }
+  },
+
+  // 4) 제휴 게스트하우스 목록. 여기에 추가하면 드롭다운에 자동 반영됩니다.
+  //    각 항목의 value는 정산/추적용으로 그대로 구글폼에 전달됩니다.
+  guesthousePartners: [
+    "망원 게스트하우스 (예시 A)",
+    "홍대 스테이 (예시 B)",
+    "기타 / Other"
+  ],
+  // 5) 컨택 채널. instagramHandle은 필수 아님(빈 문자열이면 숨김).
+  //    whatsappNumber는 국가코드 포함 숫자만 입력 (예: 8210XXXXXXXX). 비워두면 버튼이 자동으로 숨겨집니다.
+  instagramHandle: "kimchi_connect",
+  whatsappNumber: "821038711173"
+};
+/* ============================================================ */
+
+let guests = 2;
+let selectedTime = null;
+const fmtKRW = n => n.toLocaleString('ko-KR') + '원';
+const fmtUSD = n => '$' + n.toLocaleString('en-US');
+
+function renderTimeOptions(){
+  const wrap = document.getElementById('timeOptions');
+  CONFIG.timeSlots.forEach((slot, i) => {
+    const btn = document.createElement('div');
+    btn.className = 'time-btn';
+    btn.textContent = slot;
+    btn.onclick = () => selectTime(slot);
+    wrap.appendChild(btn);
+    if (i === 0){ selectedTime = null; } // no default; force explicit choice
+  });
+}
+
+function selectTime(slot){
+  selectedTime = slot;
+  document.querySelectorAll('.time-btn').forEach(b => {
+    b.classList.toggle('selected', b.textContent === slot);
+  });
+}
+
+function renderSourceOptions(){
+  const sel = document.getElementById('f_source');
+  CONFIG.guesthousePartners.forEach(name => {
+    const opt = document.createElement('option');
+    opt.value = name;
+    opt.textContent = name;
+    sel.appendChild(opt);
+  });
+}
+
+function checkConfig(){
+  const warnBox = document.getElementById('configWarning');
+  const issues = [];
+  if (CONFIG.paypalUsername.includes('YOUR_PAYPAL_ME_ID')) issues.push('PayPal ID가 예시값입니다 (CONFIG.paypalUsername)');
+  if (CONFIG.googleForm.formAction.includes('REPLACE_WITH_YOUR_FORM_ID')) issues.push('구글폼 연동이 예시값입니다 (CONFIG.googleForm)');
+  if (issues.length){
+    warnBox.innerHTML = '⚠ 아직 실제 값으로 교체되지 않았습니다: <br>' + issues.map(i => '· ' + i).join('<br>') +
+      '<br><br>지금은 데모 상태로 동작합니다 (실제 구글폼 제출·페이팔 결제는 발생하지 않음).';
+  } else {
+    warnBox.style.display = 'none';
+  }
+}
+
+function updateLivePrice(){
+  const total = CONFIG.pricePerPersonUSD * guests;
+  document.getElementById('livePrice').textContent = '$' + total.toLocaleString('en-US') + ' total (' + guests + (guests > 1 ? ' guests' : ' guest') + ')';
+}
+
+function changeGuests(delta){
+  guests = Math.max(1, Math.min(8, guests + delta));
+  document.getElementById('guestCount').textContent = guests;
+  updateLivePrice();
+}
+
+function submitBooking(){
+  const name = document.getElementById('f_name').value.trim();
+  const email = document.getElementById('f_email').value.trim();
+  const date = document.getElementById('f_date').value;
+  const source = document.getElementById('f_source').value;
+  const notes = document.getElementById('f_notes').value.trim();
+
+  if (!name || !email || !date){
+    alert('이름, 이메일, 날짜를 입력해주세요. / Please fill in name, email, and date.');
+    return;
+  }
+  if (!selectedTime){
+    alert('시간을 선택해주세요. / Please select a time slot.');
+    return;
+  }
+
+  // 구글폼으로 전송 (숨겨진 iframe target이라 페이지 이동 없이 백그라운드로 제출됨)
+  const isDemo = CONFIG.googleForm.formAction.includes('REPLACE_WITH_YOUR_FORM_ID');
+  if (!isDemo){
+    const form = document.createElement('form');
+    form.action = CONFIG.googleForm.formAction;
+    form.method = 'POST';
+    form.target = 'hidden_iframe';
+
+    const fields = {
+      [CONFIG.googleForm.entries.name]: name,
+      [CONFIG.googleForm.entries.email]: email,
+      [CONFIG.googleForm.entries.date]: date,
+      [CONFIG.googleForm.entries.time]: selectedTime,
+      [CONFIG.googleForm.entries.guests]: guests,
+      [CONFIG.googleForm.entries.source]: source,
+      [CONFIG.googleForm.entries.notes]: notes
+    };
+    Object.entries(fields).forEach(([k,v]) => {
+      const input = document.createElement('input');
+      input.type = 'hidden';
+      input.name = k;
+      input.value = v;
+      form.appendChild(input);
+    });
+    document.body.appendChild(form);
+    form.submit();
+    form.remove();
+  }
+
+  // 결제 요약 계산
+  const totalKRW = CONFIG.pricePerPersonKRW * guests;
+  const totalUSD = CONFIG.pricePerPersonUSD * guests;
+  const ref = name.replace(/\s+/g,'') + '-' + date;
+
+  document.getElementById('sumUnitPrice').textContent = fmtUSD(CONFIG.pricePerPersonUSD) + ' / ' + fmtKRW(CONFIG.pricePerPersonKRW) + ' × ' + guests;
+  document.getElementById('sumGuests').textContent = guests + ' guest(s), ' + selectedTime + ' — via ' + source;
+  document.getElementById('sumTotal').textContent = fmtUSD(totalUSD);
+  document.getElementById('noteRef').textContent = ref;
+  document.getElementById('noteRefEn').textContent = ref;
+
+  document.getElementById('summaryCard').classList.remove('hidden');
+
+  const payBtn = document.getElementById('paypalBtn');
+  payBtn.href = 'https://paypal.me/' + CONFIG.paypalUsername + '/' + totalUSD + 'USD';
+  payBtn.textContent = 'Pay ' + fmtUSD(totalUSD) + ' with PayPal';
+  payBtn.classList.remove('hidden');
+
+  document.getElementById('submitBtn').disabled = true;
+  document.getElementById('submitBtn').textContent = 'Submitted ✓';
+  document.getElementById('doneMsg').classList.remove('hidden');
+
+  window.scrollTo({ top: document.getElementById('summaryCard').offsetTop - 40, behavior: 'smooth' });
+}
+
+function renderContactBar(){
+  const bar = document.getElementById('contactBar');
+  const instaIcon = '<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.8"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.2" cy="6.8" r="1.1" fill="#fff" stroke="none"/></svg>';
+  const waIcon = '<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.8"><path d="M12 3a9 9 0 0 0-7.8 13.5L3 21l4.7-1.2A9 9 0 1 0 12 3z"/><path d="M8.5 8.7c.2-.5.4-.5.7-.5h.5c.2 0 .4 0 .6.5s.7 1.7.7 1.8 0 .3-.1.4c-.2.3-.4.4-.5.6-.2.2-.3.3-.1.6.2.3.8 1.3 1.7 2.1 1.2 1 2.1 1.3 2.4 1.5.3.1.5.1.6-.1.2-.2.7-.8.9-1.1.2-.3.4-.2.6-.1l1.7.8c.2.1.4.2.4.3.1.4.1.9-.1 1.4-.2.5-1.2 1-1.9 1.1-.6.1-1.2.2-3.3-.7-2.6-1.1-4.3-3.7-4.4-3.9-.1-.2-1-1.3-1-2.5s.6-1.8.8-2z" fill="#fff" stroke="none"/></svg>';
+
+  if (CONFIG.instagramHandle){
+    const a = document.createElement('a');
+    a.className = 'contact-item';
+    a.href = 'https://instagram.com/' + CONFIG.instagramHandle;
+    a.target = '_blank';
+    a.rel = 'noopener';
+    a.innerHTML = '<div class="contact-icon insta">' + instaIcon + '</div><span class="contact-label">@' + CONFIG.instagramHandle + '</span>';
+    bar.appendChild(a);
+  }
+  if (CONFIG.whatsappNumber){
+    const a = document.createElement('a');
+    a.className = 'contact-item';
+    a.href = 'https://wa.me/' + CONFIG.whatsappNumber;
+    a.target = '_blank';
+    a.rel = 'noopener';
+    a.innerHTML = '<div class="contact-icon wa">' + waIcon + '</div><span class="contact-label">WhatsApp</span>';
+    bar.appendChild(a);
+  }
+}
+
+renderContactBar();
+renderTimeOptions();
+renderSourceOptions();
+updateLivePrice();
+checkConfig();
+</script>
+</body>
+</html>
